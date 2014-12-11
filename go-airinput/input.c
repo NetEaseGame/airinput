@@ -43,7 +43,7 @@ enum {
 static int global_tracking_id = 1;
 static uint32_t device_flags;
 
-static int print_actions = 1;
+static int print_actions = 0;
 static int action_level = 0;
 
 int fd; // touchscreen fd
@@ -63,6 +63,10 @@ void execute_pinch(int fd, uint32_t device_flags, int touch1_x1,
                    int touch2_y1, int touch2_x2, int touch2_y2, int num_steps,
                    int duration_msec);
 
+void set_debug(int on){
+	print_actions = on;
+}
+
 // must be execute before everythong
 int input_init(char * device){
 	fd = open(device, O_RDWR);
@@ -70,9 +74,7 @@ int input_init(char * device){
 		fprintf(stderr, "could not open %s, %s\n", device, strerror(errno));
 		return 1;
 	}
-	printf("%d\n", device_flags);
 	device_flags = figure_out_events_device_reports(fd);
-	printf("%d\n", device_flags);
 }
 
 void tap(int x, int y, int msec){

@@ -1,4 +1,4 @@
-package main
+package airinput
 
 // #include "screen.h"
 import "C"

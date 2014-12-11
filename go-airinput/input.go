@@ -1,0 +1,88 @@
+package airinput
+
+import (
+	// #include "input.h"
+	"C"
+	"fmt"
+	"io/ioutil"
+	"log"
+	"regexp"
+	"strings"
+	"time"
+
+	"github.com/codeskyblue/comtool"
+)
+
+var goDebug = false
+
+func dprintf(format string, args ...interface{}) {
+	if strings.HasSuffix(format, "\n") {
+		format += "\n"
+	}
+	if goDebug {
+		fmt.Printf(format, args...)
+	}
+}
+
+func init() {
+	var id int = -1
+	for i := 0; i < 10; i++ {
+		namePath := fmt.Sprintf("/sys/class/input/event%d/device/name", i)
+		if !comtool.Exists(namePath) {
+			break
+		}
+		data, err := ioutil.ReadFile(namePath)
+		if err != nil {
+			continue
+		}
+		name := strings.TrimSpace(string(data))
+		dprintf("event%d: name: %s", i, name)
+		// $name may have Touchscreen and touchscreen
+		for _, possibleName := range []string{"ouchscreen$", "-tpd$"} {
+			re := regexp.MustCompile(possibleName)
+			if re.MatchString(name) {
+				id = i
+				break
+			}
+		}
+		if id != -1 {
+			break
+		}
+	}
+	dprintf("eventid: %d", id)
+	if id == -1 {
+		log.Fatal("can autodetect touchpad event")
+	}
+	C.input_init(C.CString(fmt.Sprintf("/dev/input/event%d", id)))
+}
+
+// Where show debug info
+func Debug(state bool) {
+	flag := C.int(0)
+	if state {
+		flag = C.int(1)
+	}
+	goDebug = state
+	C.set_debug(flag)
+}
+
+// void tap(int x, int y, int duration_msec);
+func Tap(x, y int, duration time.Duration) {
+	msec := int(duration.Nanoseconds() / 1e6)
+	C.tap(C.int(x), C.int(y), C.int(msec))
+}
+
+// void drag(int start_x, int start_y, int end_x, int end_y, int num_steps, int msec);
+func Drag(startX, startY int, endX, endY int, steps int, duration time.Duration) {
+	msec := int(duration.Nanoseconds() / 1e6)
+	C.drag(C.int(startX), C.int(startY), C.int(endX), C.int(endY), C.int(steps), C.int(msec))
+}
+
+//void pinch(int Ax0, int Ay0, int Ax1, int Ay1,
+//		int Bx0, int By0, int Bx1, int By1, int num_steps, int msec);
+func Pinch(Ax0, Ay0, Ax1, Ay1 int,
+	Bx0, By0, Bx1, By1 int, steps int, duration time.Duration) {
+	msec := int(duration.Nanoseconds() / 1e6)
+	C.pinch(C.int(Ax0), C.int(Ay0), C.int(Ax1), C.int(Ay1),
+		C.int(Bx0), C.int(By0), C.int(Bx1), C.int(By1), C.int(steps), C.int(msec))
+}

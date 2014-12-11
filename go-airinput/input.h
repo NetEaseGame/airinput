@@ -8,6 +8,8 @@
 #ifndef INPUT_H
 #define INPUT_H
 
+void set_debug(int on);
+
 int input_init(char * event);
 
 void tap(int x, int y, int duration_msec);
