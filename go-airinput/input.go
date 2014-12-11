@@ -56,7 +56,7 @@ func init() {
 	C.input_init(C.CString(fmt.Sprintf("/dev/input/event%d", id)))
 }
 
-// Where show debug info
+// Wether show debug info
 func Debug(state bool) {
 	flag := C.int(0)
 	if state {
@@ -66,20 +66,20 @@ func Debug(state bool) {
 	C.set_debug(flag)
 }
 
-// void tap(int x, int y, int duration_msec);
+// Tap position for some time
 func Tap(x, y int, duration time.Duration) {
 	msec := int(duration.Nanoseconds() / 1e6)
 	C.tap(C.int(x), C.int(y), C.int(msec))
 }
 
-// void drag(int start_x, int start_y, int end_x, int end_y, int num_steps, int msec);
+// Drag form A to B
 func Drag(startX, startY int, endX, endY int, steps int, duration time.Duration) {
 	msec := int(duration.Nanoseconds() / 1e6)
 	C.drag(C.int(startX), C.int(startY), C.int(endX), C.int(endY), C.int(steps), C.int(msec))
 }
 
-//void pinch(int Ax0, int Ay0, int Ax1, int Ay1,
-//		int Bx0, int By0, int Bx1, int By1, int num_steps, int msec);
+// This is like two drag
+// Can implements like shrink and magnify
 func Pinch(Ax0, Ay0, Ax1, Ay1 int,
 	Bx0, By0, Bx1, By1 int, steps int, duration time.Duration) {
 	msec := int(duration.Nanoseconds() / 1e6)
