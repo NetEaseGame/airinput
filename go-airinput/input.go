@@ -3,9 +3,9 @@ package airinput
 import (
 	// #include "input.h"
 	"C"
+	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"regexp"
 	"strings"
 	"time"
@@ -16,7 +16,7 @@ import (
 var goDebug = false
 
 func dprintf(format string, args ...interface{}) {
-	if strings.HasSuffix(format, "\n") {
+	if !strings.HasSuffix(format, "\n") {
 		format += "\n"
 	}
 	if goDebug {
@@ -24,12 +24,13 @@ func dprintf(format string, args ...interface{}) {
 	}
 }
 
-func init() {
+// Have to be call before other func
+func Init() error {
 	var id int = -1
 	for i := 0; i < 10; i++ {
 		namePath := fmt.Sprintf("/sys/class/input/event%d/device/name", i)
 		if !comtool.Exists(namePath) {
-			break
+			continue
 		}
 		data, err := ioutil.ReadFile(namePath)
 		if err != nil {
@@ -38,7 +39,8 @@ func init() {
 		name := strings.TrimSpace(string(data))
 		dprintf("event%d: name: %s", i, name)
 		// $name may have Touchscreen and touchscreen
-		for _, possibleName := range []string{"ouchscreen$", "-tpd$"} {
+		// atmel-maxtouch: Xiaomi2
+		for _, possibleName := range []string{"ouchscreen$", "-tpd$", "atmel-maxtouch"} {
 			re := regexp.MustCompile(possibleName)
 			if re.MatchString(name) {
 				id = i
@@ -51,9 +53,10 @@ func init() {
 	}
 	dprintf("eventid: %d", id)
 	if id == -1 {
-		log.Fatal("can autodetect touchpad event")
+		return errors.New("cannot autodetect touchpad event")
 	}
 	C.input_init(C.CString(fmt.Sprintf("/dev/input/event%d", id)))
+	return nil
 }
 
 // Wether show debug info
