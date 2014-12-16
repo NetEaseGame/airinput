@@ -5,15 +5,33 @@ import (
 	"fmt"
 	"image/png"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
 	"github.com/netease/airinput/go-airinput"
 )
 
+var (
+//	m = macaron.Classic()
+)
+
+func ServeWeb(addr string) {
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/png")
+		img, _ := airinput.TakeSnapshot()
+		png.Encode(w, img)
+	})
+	http.ListenAndServe(addr, nil)
+}
+
 func main() {
+	ServeWeb(":21000")
 	airinput.Debug(false)
-	img := airinput.TakeSnapshot()
+	img, err := airinput.TakeSnapshot()
+	if err != nil {
+		log.Fatal(err)
+	}
 	fd, err := os.Create("/data/local/tmp/air.png")
 	if err != nil {
 		log.Fatal(err)
