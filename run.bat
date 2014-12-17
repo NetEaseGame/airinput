@@ -11,6 +11,7 @@ adb.exe shell chmod 755 "/data/local/tmp/air-native"
 
 echo Starting...
 rem adb.exe shell kill -9 "/data/local/tmp/air-native"
-adb.exe shell "/data/local/tmp/air-native -daemon"
+rem adb.exe shell "/data/local/tmp/air-native -daemon"
+adb.exe shell "/data/local/tmp/air-native"
 
 echo Service started successfully.

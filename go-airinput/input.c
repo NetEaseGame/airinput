@@ -246,17 +246,26 @@ void execute_drag(int fd, uint32_t device_flags, int start_x,
 
   // drag
   desired_interval_msec = duration_msec / num_steps;
-  for (i=0; i<num_steps; i++) {
+  for (i=0; i<=num_steps; i++) {
     clock_gettime(CLOCK_MONOTONIC, &current_time);
+	/*
     avg_event_dispatch_time_msec = ((avg_event_dispatch_time_msec * i) +
                                     timediff_msec(&time_before_last_move,
                                                   &current_time)) / i;
+												  */
+	double wait_nsecs = desired_interval_msec * i - timediff_msec(&start_time, &current_time);
+	if (wait_nsecs > 0){
+        execute_sleep(wait_nsecs);
+	}
+
+	/*
     if (desired_interval_msec > 0 &&
         avg_event_dispatch_time_msec < desired_interval_msec) {
       execute_sleep(desired_interval_msec - avg_event_dispatch_time_msec);
     }
 
     memcpy(&time_before_last_move, &current_time, sizeof(struct timespec));
+	*/
     execute_move(fd, device_flags, start_x+delta[0]*i, start_y+delta[1]*i);
   }
 
@@ -280,6 +289,9 @@ void execute_pinch(int fd, uint32_t device_flags, int touch1_x1,
   int sleeptime = duration_msec / num_steps;
   int i;
 
+  struct timespec start_time, current_time;
+  clock_gettime(CLOCK_MONOTONIC, &start_time);
+
   print_action(ACTION_START, "pinch",
                "\"touch1_x1\": %d, \"touch1_y1\": %d, \"touch1_x2\": %d, "
                "\"touch1_y2\": %d, \"touch2_x1\": %d, \"touch2_y1\": %d, "
@@ -297,8 +309,13 @@ void execute_pinch(int fd, uint32_t device_flags, int touch1_x1,
   execute_press(fd, device_flags, touch2_x1, touch2_y1);
 
   // drag
-  for (i=0; i<num_steps; i++) {
-    execute_sleep(sleeptime);
+  for (i=0; i<=num_steps; i++) {
+    clock_gettime(CLOCK_MONOTONIC, &current_time);
+	double wait_nsecs = sleeptime * i - timediff_msec(&start_time, &current_time);
+	if (wait_nsecs > 0){
+        execute_sleep(wait_nsecs);
+	}
+    //execute_sleep(sleeptime);
 
     change_mt_slot(fd, device_flags, 0);
     execute_move(fd, device_flags, touch1_x1+delta1[0]*i, touch1_y1+delta1[1]*i);

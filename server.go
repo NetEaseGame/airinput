@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"image/png"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"time"
@@ -19,8 +20,22 @@ func ServeWeb(addr string) {
 		<head><title>Native-Airinput</title></head>
 		<body><h2>Native Airinput</h2>
 		<div><img src="/screen.png" height="500px"/></div>
-		<a href="/test">pinch test</test>
+		<textarea id="jscode" style="height:100px; width:500px"></textarea>
+		<button id="btn-run">RUN</button>
+		<script src="//cdnjs.cloudflare.com/ajax/libs/jquery/2.1.1/jquery.js"></script>
+		<script>
+		$(function(){
+			$("#btn-run").click(function(){
+				$.ajax('/runjs', {type:'POST', processData: false, data: $("#jscode").val()});
+			});
+		});
+		</script>
 		</body></html>`)
+	})
+	http.HandleFunc("/runjs", func(w http.ResponseWriter, r *http.Request) {
+		code, _ := ioutil.ReadAll(r.Body)
+		ret, _ := RunJS(string(code))
+		io.WriteString(w, ret.String())
 	})
 	http.HandleFunc("/test", func(rw http.ResponseWriter, r *http.Request) {
 		w, h := airinput.ScreenSize()

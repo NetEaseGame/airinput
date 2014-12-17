@@ -5,6 +5,16 @@ Semulate touch,drap,pinch for Android phone.
 ### The lib of go-airinput
 [![GoDoc](https://godoc.org/github.com/NetEase/airinput/go-airinput?status.svg)](https://godoc.org/github.com/NetEase/airinput/go-airinput)
 
+### Distribution
+I put a pre compiled file in **dist** folder
+
+About the usage:
+
+1. use `run.bat` to push file to your phone.
+2. open browser `http://<phone ip addr>:21000`
+
+![IMG](images/browser-airinput.png)
+
 ### About
 Still in develop, but the code is healthy. 
 

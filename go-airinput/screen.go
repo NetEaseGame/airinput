@@ -23,11 +23,13 @@ func ScreenSize() (w, h int) {
 	return
 }
 
+const DEV_FB0 = "/dev/graphics/fb0"
+
 // TakeSnapshot of android phone (by read /dev/fb0)
 // Only ok with few phones, a lot of phone will got blank image.
 func TakeSnapshot2() *image.RGBA {
 	var pict C.struct_picture
-	C.TakeScreenshot(C.CString("/dev/graphics/fb0"), &pict)
+	C.TakeScreenshot(C.CString(DEV_FB0), &pict)
 	w, h := int(pict.xres), int(pict.yres)
 	img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
 	size := w * h * 4 // Assume bytes per pixel is 4 bytes
