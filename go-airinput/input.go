@@ -89,3 +89,7 @@ func Pinch(Ax0, Ay0, Ax1, Ay1 int,
 	C.pinch(C.int(Ax0), C.int(Ay0), C.int(Ax1), C.int(Ay1),
 		C.int(Bx0), C.int(By0), C.int(Bx1), C.int(By1), C.int(steps), C.int(msec))
 }
+
+func Release() {
+	C.release()
+}

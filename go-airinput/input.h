@@ -16,5 +16,6 @@ void tap(int x, int y, int duration_msec);
 void drag(int start_x, int start_y, int end_x, int end_y, int num_steps, int msec);
 void pinch(int Ax0, int Ay0, int Ax1, int Ay1,
 		int Bx0, int By0, int Bx1, int By1, int num_steps, int msec);
+void release();
 
 #endif /* !INPUT_H */

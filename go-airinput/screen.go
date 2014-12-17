@@ -6,7 +6,6 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
-	"fmt"
 	"image"
 	"os/exec"
 	"sync"
@@ -18,6 +17,7 @@ func ScreenSize() (w, h int) {
 	screenOnce.Do(func() {
 		C.screen_init()
 	})
+	C.screen_init()
 	w = int(C.width())
 	h = int(C.height())
 	return
@@ -51,7 +51,7 @@ func TakeSnapshot() (img *image.RGBA, err error) {
 	if err != nil {
 		return
 	}
-	fmt.Println(width, height, format)
+	//fmt.Println(width, height, format)
 	img = image.NewRGBA(image.Rectangle{image.ZP, image.Point{int(width), int(height)}})
 	_, err = bf.Read(img.Pix)
 	return
