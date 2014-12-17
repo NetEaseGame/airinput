@@ -1,6 +1,6 @@
 airinput
 =====================
-Semulate touch,drap,pinch for Android phone.
+Simulate touch,drap,pinch for Android phone.
 
 ### The lib of go-airinput
 [![GoDoc](https://godoc.org/github.com/NetEase/airinput/go-airinput?status.svg)](https://godoc.org/github.com/NetEase/airinput/go-airinput)
