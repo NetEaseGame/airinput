@@ -24,8 +24,7 @@ func dprintf(format string, args ...interface{}) {
 	}
 }
 
-// Have to be call before other func
-func Init() error {
+func GuessTouchpad() (p string, err error) {
 	var id int = -1
 	for i := 0; i < 10; i++ {
 		namePath := fmt.Sprintf("/sys/class/input/event%d/device/name", i)
@@ -40,7 +39,7 @@ func Init() error {
 		dprintf("event%d: name: %s", i, name)
 		// $name may have Touchscreen and touchscreen
 		// atmel-maxtouch: Xiaomi2
-		for _, possibleName := range []string{"ouchscreen$", "-tpd$", "atmel-maxtouch"} {
+		for _, possibleName := range []string{"ouchscreen$", "synaptics-rmi-ts", "ist30xx_ts_input", "mtk-tpd$", "atmel-maxtouch"} {
 			re := regexp.MustCompile(possibleName)
 			if re.MatchString(name) {
 				id = i
@@ -53,9 +52,21 @@ func Init() error {
 	}
 	dprintf("eventid: %d", id)
 	if id == -1 {
-		return errors.New("cannot autodetect touchpad event")
+		return "", errors.New("cannot autodetect touchpad event")
 	}
-	C.input_init(C.CString(fmt.Sprintf("/dev/input/event%d", id)))
+	return fmt.Sprintf("/dev/input/event%d", id), nil
+}
+
+// Have to be call before other func
+// if touchpadEvent == "", it will auto guess
+func Init(touchpadEvent string) (err error) {
+	if touchpadEvent == "" {
+		touchpadEvent, err = GuessTouchpad()
+		if err != nil {
+			return
+		}
+	}
+	C.input_init(C.CString(touchpadEvent))
 	return nil
 }
 
