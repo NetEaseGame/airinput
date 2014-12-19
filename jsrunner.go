@@ -2,6 +2,7 @@
 package main
 
 import (
+	"os/exec"
 	"time"
 
 	"github.com/netease/airinput/go-airinput"
@@ -48,10 +49,24 @@ func init() {
 			int(steps), totime(msec))
 		return otto.UndefinedValue()
 	})
+	vm.Set("exec", func(call otto.FunctionCall) otto.Value {
+		if len(call.ArgumentList) == 0 {
+			return otto.UndefinedValue()
+		}
+		params := []string{}
+		for _, p := range call.ArgumentList[1:] {
+			params = append(params, p.String())
+		}
+		cmd := exec.Command(call.Argument(0).String(), params...)
+		data, _ := cmd.Output()
+		result, _ := otto.ToValue(string(data))
+		return result
+	})
 }
 
 // //abc = 1 + 2
 // console.log("The value of abc is " + abc); // 4
+// console.log(exec("echo", "-n", "hello"));
 func RunJS(code string) (otto.Value, error) {
 	return vm.Run(code)
 }

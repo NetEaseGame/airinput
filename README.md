@@ -1,6 +1,6 @@
 airinput
 =====================
-Simulate touch,drap,pinch for Android phone.
+Simulate touch,drag,pinch for Android phone.
 
 ### The lib of go-airinput
 [![GoDoc](https://godoc.org/github.com/NetEase/airinput/go-airinput?status.svg)](https://godoc.org/github.com/NetEase/airinput/go-airinput)
@@ -14,6 +14,15 @@ About the usage:
 2. open browser `http://<phone ip addr>:21000`
 
 ![IMG](images/browser-airinput.png)
+
+Support post js code to `http://<phone ip addr>:21000/runjs`
+
+Example js code:
+
+	exec("input", "keyevent", "ENTER")
+	tap(20, 30, 100) // position: (20, 30), duration: 100ms
+	drag(10, 12, 50, 60, 10, 100) // start(10, 12), end(50, 60), steps: 10, duration: 100ms
+	// pinch(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1, steps, duration)
 
 ### About
 Still in develop, but the code is healthy. 
