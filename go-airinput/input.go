@@ -12,6 +12,10 @@ import (
 
 	"github.com/codeskyblue/comtool"
 )
+import (
+	"os/exec"
+	"strconv"
+)
 
 var goDebug = false
 
@@ -25,6 +29,30 @@ func dprintf(format string, args ...interface{}) {
 }
 
 func GuessTouchpad() (p string, err error) {
+	mxptn := regexp.MustCompile(`0035.*max (\d+)`)
+	myptn := regexp.MustCompile(`0036.*max (\d+)`)
+	for i := 0; i < 10; i++ {
+		dev := "event" + strconv.Itoa(i)
+		out, err := exec.Command("getevent", "-p", "/dev/input/"+dev).Output()
+		if err != nil {
+			continue
+		}
+		mxs := mxptn.FindStringSubmatch(string(out))
+		if len(mxs) == 0 {
+			continue
+		}
+		mys := myptn.FindStringSubmatch(string(out))
+		if len(mys) == 0 {
+			continue
+		}
+		//inputdevs.TouchScreen.RawWidth = atoi(mxs[1])
+		//inputdevs.TouchScreen.RawHeight = atoi(mys[1])
+		return "/dev/input/" + dev, nil
+	}
+	return "", errors.New("cannot guess out touchpad event")
+}
+
+func GuessTouchpadByName() (p string, err error) {
 	var id int = -1
 	for i := 0; i < 10; i++ {
 		namePath := fmt.Sprintf("/sys/class/input/event%d/device/name", i)

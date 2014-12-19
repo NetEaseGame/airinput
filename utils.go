@@ -4,6 +4,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	"github.com/codeskyblue/comtool"
 )
@@ -30,14 +31,16 @@ func MyIP2() (ip string, err error) {
 	return ifm.RealIps[0], nil
 }
 
-func MyIP() (ip string, err error) {
+func MyIP() (ip []string, err error) {
 	ips, err := comtool.GetLocalIPs()
 	if err != nil {
 		return
 	}
-	ip = ""
+	ip = make([]string, 0)
 	for _, i := range ips {
-		ip = ip + i.String() + "\n"
+		if strings.Contains(i.String(), ".") {
+			ip = append(ip, i.String())
+		}
 	}
 	return
 }

@@ -7,3 +7,4 @@
 #
 
 GOOS=android GOARCH=arm CGO_ENABLED=1 go build -o air-native
+cp air-native dist/

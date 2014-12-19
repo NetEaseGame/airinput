@@ -20,6 +20,7 @@ var (
 	isDaemon = flag.Bool("daemon", false, "run as daemon")
 	fix      = flag.Bool("fix", false, "fix unexpected problem caused by airinput")
 	tpevent  = flag.String("i", "", "touchpad event, eg: /dev/input/event1")
+	runjs    = flag.String("runjs", "", "javascript code to run")
 )
 
 func main() {
@@ -31,12 +32,28 @@ func main() {
 		return
 	}
 
+	if *tpevent == "" {
+		var err error
+		*tpevent, err = airinput.GuessTouchpad()
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Printf("Use tpd event: %s\n", *tpevent)
+	}
+
 	// initial
 	if err := airinput.Init(*tpevent); err != nil {
 		log.Fatal(err)
 	}
+
+	if *runjs != "" {
+		RunJS(*runjs)
+		return
+	}
+
 	ipinfo, _ := MyIP()
-	fmt.Println(ipinfo)
+	fmt.Printf("IP: %v\n", ipinfo)
+	fmt.Printf("Listen on: %v\n", *addr)
 
 	if *isDaemon {
 		context := new(daemon.Context)
@@ -45,10 +62,10 @@ func main() {
 			println("daemon started")
 		} else {
 			defer context.Release()
-			ServeWeb(":21000")
+			ServeWeb(*addr)
 		}
 	} else {
-		ServeWeb(":21000")
+		ServeWeb(*addr)
 		return
 	}
 	// useless

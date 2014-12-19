@@ -24,6 +24,10 @@ Example js code:
 	drag(10, 12, 50, 60, 10, 100) // start(10, 12), end(50, 60), steps: 10, duration: 100ms
 	// pinch(ax0, ay0, ax1, ay1, bx0, by0, bx1, by1, steps, duration)
 
+Also support use adb to run js
+
+	adb shell /data/local/tmp/air-native -i /dev/input/event1 -runjs='tap(400, 400, 2000)'
+
 ### About
 Still in develop, but the code is healthy. 
 
