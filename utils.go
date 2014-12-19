@@ -3,7 +3,9 @@ package main
 
 import (
 	"encoding/json"
+	"io/ioutil"
 	"net/http"
+	"os"
 	"strings"
 
 	"github.com/codeskyblue/comtool"
@@ -43,4 +45,13 @@ func MyIP() (ip []string, err error) {
 		}
 	}
 	return
+}
+
+func SerialNo() string {
+	fd, err := os.Open("/sys/class/android_usb/android0/iSerial")
+	if err != nil {
+		return ""
+	}
+	data, _ := ioutil.ReadAll(fd)
+	return string(data)
 }

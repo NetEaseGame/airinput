@@ -5,6 +5,8 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
+	"net/url"
 
 	"github.com/netease/airinput/go-airinput"
 	"github.com/sevlyar/go-daemon"
@@ -15,11 +17,12 @@ var (
 )
 
 var (
-	addr     = flag.String("addr", ":21000", "server listen address")
+	addr     = flag.String("addr", ":21000", "listen address")
 	debug    = flag.Bool("debug", false, "enable debug")
 	isDaemon = flag.Bool("daemon", false, "run as daemon")
 	fix      = flag.Bool("fix", false, "fix unexpected problem caused by airinput")
 	tpevent  = flag.String("i", "", "touchpad event, eg: /dev/input/event1")
+	remote   = flag.String("remote", "", "remote control center, eg: 10.0.0.1:9000")
 	runjs    = flag.String("runjs", "", "javascript code to run")
 )
 
@@ -49,6 +52,14 @@ func main() {
 	if *runjs != "" {
 		RunJS(*runjs)
 		return
+	}
+
+	if *remote != "" {
+		r, err := http.Get("http://" + *remote + "/connect?serialno=" + url.QueryEscape(SerialNo()))
+		if err == nil {
+			fmt.Printf("Remote connected\n")
+		}
+		r.Body.Close()
 	}
 
 	ipinfo, _ := MyIP()
