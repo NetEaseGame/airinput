@@ -2,6 +2,7 @@
 package main
 
 import (
+	"log"
 	"os/exec"
 	"time"
 
@@ -58,7 +59,10 @@ func init() {
 			params = append(params, p.String())
 		}
 		cmd := exec.Command(call.Argument(0).String(), params...)
-		data, _ := cmd.Output()
+		data, err := cmd.CombinedOutput()
+		if err != nil {
+			log.Println("jsrun error", err)
+		}
 		result, _ := otto.ToValue(string(data))
 		return result
 	})
