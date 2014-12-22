@@ -6,18 +6,17 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"log"
+	"os/exec"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/codeskyblue/comtool"
 )
-import (
-	"os/exec"
-	"strconv"
-)
 
 var goDebug = false
+var rawWidth, rawHeight int
 
 func dprintf(format string, args ...interface{}) {
 	if !strings.HasSuffix(format, "\n") {
@@ -28,28 +27,52 @@ func dprintf(format string, args ...interface{}) {
 	}
 }
 
-func GuessTouchpad() (p string, err error) {
+func atoi(a string) int {
+	var i int
+	_, err := fmt.Sscanf(a, "%d", &i)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return i
+}
+
+func real2raw(x, y int) (rx, ry int) {
+	w, h, _ := ScreenSize()
+	x = x * rawWidth / w
+	y = y * rawHeight / h
+	return x, y
+}
+
+func GetRawSize(event string) (width, height int, err error) {
 	mxptn := regexp.MustCompile(`0035.*max (\d+)`)
 	myptn := regexp.MustCompile(`0036.*max (\d+)`)
-	for i := 0; i < 10; i++ {
-		dev := "event" + strconv.Itoa(i)
-		out, err := exec.Command("getevent", "-p", "/dev/input/"+dev).Output()
-		if err != nil {
-			continue
-		}
-		mxs := mxptn.FindStringSubmatch(string(out))
-		if len(mxs) == 0 {
-			continue
-		}
-		mys := myptn.FindStringSubmatch(string(out))
-		if len(mys) == 0 {
-			continue
-		}
-		//inputdevs.TouchScreen.RawWidth = atoi(mxs[1])
-		//inputdevs.TouchScreen.RawHeight = atoi(mys[1])
-		return "/dev/input/" + dev, nil
+	out, err := exec.Command("getevent", "-p", event).Output()
+	if err != nil {
+		return
 	}
-	return "", errors.New("cannot guess out touchpad event")
+	err = errors.New("touchpad event not recognized")
+	mxs := mxptn.FindStringSubmatch(string(out))
+	if len(mxs) == 0 {
+		return
+	}
+	mys := myptn.FindStringSubmatch(string(out))
+	if len(mys) == 0 {
+		return
+	}
+	return atoi(mxs[1]), atoi(mys[1]), nil
+}
+
+func GuessTouchpad() (p string, err error) {
+	for i := 0; i < 10; i++ {
+		event := fmt.Sprintf("/dev/input/event%d", i)
+		if _, _, err := GetRawSize(event); err != nil {
+			fmt.Println(err)
+			continue
+		} else {
+			return event, nil
+		}
+	}
+	return "", errors.New("touchpad event not found")
 }
 
 func GuessTouchpadByName() (p string, err error) {
@@ -86,15 +109,19 @@ func GuessTouchpadByName() (p string, err error) {
 }
 
 // Have to be call before other func
-// if touchpadEvent == "", it will auto guess
-func Init(touchpadEvent string) (err error) {
-	if touchpadEvent == "" {
-		touchpadEvent, err = GuessTouchpad()
+// if tpdEvent == "", it will auto guess
+func Init(tpdEvent string) (err error) {
+	if tpdEvent == "" {
+		tpdEvent, err = GuessTouchpad()
 		if err != nil {
 			return
 		}
+		rawWidth, rawHeight, err = GetRawSize(tpdEvent)
+		if err != nil {
+			return err
+		}
 	}
-	C.input_init(C.CString(touchpadEvent))
+	C.input_init(C.CString(tpdEvent))
 	return nil
 }
 
@@ -110,7 +137,9 @@ func Debug(state bool) {
 
 // Tap position for some time
 func Tap(x, y int, duration time.Duration) {
+	x, y = real2raw(x, y)
 	msec := int(duration.Nanoseconds() / 1e6)
+	fmt.Println(x, y)
 	C.tap(C.int(x), C.int(y), C.int(msec))
 }
 

@@ -6,22 +6,14 @@ import "C"
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"image"
 	"os/exec"
+	"regexp"
 	"sync"
 )
 
 var screenOnce = sync.Once{}
-
-func ScreenSize() (w, h int) {
-	screenOnce.Do(func() {
-		C.screen_init()
-	})
-	C.screen_init()
-	w = int(C.width())
-	h = int(C.height())
-	return
-}
 
 const DEV_FB0 = "/dev/graphics/fb0"
 
@@ -56,5 +48,32 @@ func TakeSnapshot() (img *image.RGBA, err error) {
 	//fmt.Println(width, height, format)
 	img = image.NewRGBA(image.Rectangle{image.ZP, image.Point{int(width), int(height)}})
 	_, err = bf.Read(img.Pix)
+	return
+}
+
+// Refrerence code of python-adbviewclient
+func ScreenSize() (width int, height int, err error) {
+	out, err := exec.Command("dumpsys", "window").Output()
+	if err != nil {
+		return
+	}
+	rsRE := regexp.MustCompile(`\s*mRestrictedScreen=\(\d+,\d+\) (?P<w>\d+)x(?P<h>\d+)`)
+	matches := rsRE.FindStringSubmatch(string(out))
+	if len(matches) == 0 {
+		err = errors.New("get shape(width,height) from device error")
+		return
+	}
+	return atoi(matches[1]), atoi(matches[2]), nil
+}
+
+// Use ioctl
+// Got error some times
+func ScreenSize2() (w, h int) {
+	screenOnce.Do(func() {
+		C.screen_init()
+	})
+	C.screen_init()
+	w = int(C.width())
+	h = int(C.height())
 	return
 }

@@ -79,20 +79,4 @@ func main() {
 		ServeWeb(*addr)
 		return
 	}
-	// useless
-
-	/*
-		img, err := airinput.TakeSnapshot()
-		if err != nil {
-			log.Fatal(err)
-			return
-		}
-		fd, err := os.Create("/data/local/tmp/air.png")
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer fd.Close()
-		png.Encode(fd, img)
-		return
-	*/
 }

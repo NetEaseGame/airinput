@@ -78,7 +78,7 @@ func ServeWeb(addr string) {
 				console.log(jscode);
 				$.ajax('/runjs', {type:'POST', processData: false, data: jscode, success: function(){
 					if ($('#autoreload')[0].checked){
-						setTimeout(function(){location.reload(true)}, 2000);
+						setTimeout(function(){loadscreen()}, 2000);
 					}
 				}});
 				console.log(startPoint, ep, steps, msec);
@@ -93,7 +93,7 @@ func ServeWeb(addr string) {
 		io.WriteString(w, ret.String())
 	})
 	http.HandleFunc("/test", func(rw http.ResponseWriter, r *http.Request) {
-		w, h := airinput.ScreenSize()
+		w, h, _ := airinput.ScreenSize()
 		fmt.Printf("width: %d, height: %d\n", w, h)
 
 		lx, ly := w/6, 300
