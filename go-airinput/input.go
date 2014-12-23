@@ -38,6 +38,9 @@ func atoi(a string) int {
 
 func real2raw(x, y int) (rx, ry int) {
 	w, h, _ := ScreenSize()
+	if w > h {
+		w, h = h, w
+	}
 	x = x * rawWidth / w
 	y = y * rawHeight / h
 	return x, y
@@ -66,7 +69,6 @@ func GuessTouchpad() (p string, err error) {
 	for i := 0; i < 10; i++ {
 		event := fmt.Sprintf("/dev/input/event%d", i)
 		if _, _, err := GetRawSize(event); err != nil {
-			fmt.Println(err)
 			continue
 		} else {
 			return event, nil
@@ -116,10 +118,10 @@ func Init(tpdEvent string) (err error) {
 		if err != nil {
 			return
 		}
-		rawWidth, rawHeight, err = GetRawSize(tpdEvent)
-		if err != nil {
-			return err
-		}
+	}
+	rawWidth, rawHeight, err = GetRawSize(tpdEvent)
+	if err != nil {
+		return err
 	}
 	C.input_init(C.CString(tpdEvent))
 	return nil

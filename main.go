@@ -58,8 +58,8 @@ func main() {
 		r, err := http.Get("http://" + *remote + "/connect?serialno=" + url.QueryEscape(SerialNo()))
 		if err == nil {
 			fmt.Printf("Remote connected\n")
+			r.Body.Close()
 		}
-		r.Body.Close()
 	}
 
 	ipinfo, _ := MyIP()
