@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
+	"image/jpeg"
 	"image/png"
 	"io"
 	"io/ioutil"
@@ -20,7 +21,7 @@ import (
 	"github.com/netease/airinput/go-airinput"
 )
 
-func ServeWeb(addr string) {
+func init() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/html")
 		io.WriteString(w, `<html>
@@ -53,11 +54,19 @@ func ServeWeb(addr string) {
 			var startTime = 0, startPoint = [0, 0];
 			var steps = 0;
 			var $screen = $("#screen");
+			$screen.attr("src", "/screen.jpg?random="+new Date().getTime());
+
 			var loadscreen = function(e){
-				// 
-				$screen.attr("src", "/screen/"+new Date().getTime());
-				//location.reload(true);
+				$screen.attr("src", "/screen.jpg?random="+new Date().getTime());
 			};
+
+			$screen
+				.unbind()
+				.load(function(){
+					console.log("image loaded");
+					loadscreen();
+				});
+
 			//setInterval(function() { loadscreen() }, 4000);
 			$("#refresh").click(function(){loadscreen()});
 
@@ -81,6 +90,7 @@ func ServeWeb(addr string) {
 			$("#screen").mouseup(function(e){
 				var ep = mousepoint(e);
 				var msec = new Date().getMilliseconds() - startTime;
+				msec = 200;
 				var jscode = 'tap({0}, {1}, {2})'.format(ep[0], ep[1], msec);
 				console.log(jscode);
 				$.ajax('/runjs', {type:'POST', processData: false, data: jscode, success: function(){
@@ -94,27 +104,14 @@ func ServeWeb(addr string) {
 		</script>
 		</body></html>`)
 	})
+	// Run Javascript code
 	http.HandleFunc("/runjs", func(w http.ResponseWriter, r *http.Request) {
 		code, _ := ioutil.ReadAll(r.Body)
 		ret, _ := RunJS(string(code))
 		io.WriteString(w, ret.String())
 	})
-	http.HandleFunc("/test", func(rw http.ResponseWriter, r *http.Request) {
-		w, h, _ := airinput.ScreenSize()
-		fmt.Printf("width: %d, height: %d\n", w, h)
 
-		lx, ly := w/6, 300
-		mx, my := w/2, ly
-		rx, ry := w/6*5, ly
-		airinput.Pinch(lx, ly, mx, my,
-			rx, ry, mx, my, 10, time.Second)
-
-		time.Sleep(time.Second * 1)
-
-		airinput.Pinch(mx, my, lx, ly,
-			mx, my, rx, ry, 10, time.Second)
-		io.WriteString(rw, "pinch run finish")
-	})
+	// Exit the server after 0.5s
 	http.HandleFunc("/exit", func(w http.ResponseWriter, r *http.Request) {
 		go func() {
 			time.Sleep(500 * time.Microsecond)
@@ -122,19 +119,23 @@ func ServeWeb(addr string) {
 		}()
 		io.WriteString(w, "Server exit after 0.5s")
 	})
+
 	cache := NewRGBACache(2) // cache size = 2
-	screenFunc := func(w http.ResponseWriter, r *http.Request) {
+	http.HandleFunc("/screen.png", func(w http.ResponseWriter, r *http.Request) {
 		img, _ := airinput.TakeSnapshot()
-		md5sum := fmt.Sprintf("%x", md5.Sum(img.Pix))
-		cache.Put(md5sum, img)
 		w.Header().Set("Content-Type", "image/png")
-		w.Header().Set("X-Md5sum", md5sum)
 		png.Encode(w, img)
-	}
-	http.HandleFunc("/screen.png", screenFunc)
-	http.HandleFunc("/screen/", screenFunc)
+	})
+	http.HandleFunc("/screen.jpg", func(w http.ResponseWriter, r *http.Request) {
+		img, _ := airinput.TakeSnapshot()
+		w.Header().Set("Content-Type", "image/png")
+		jpeg.Encode(w, img, &jpeg.Options{60})
+	})
+
+	// Send full image first time
+	// Then send patch until connection closed
 	http.HandleFunc("/patch.hijack", func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("new conn")
+		log.Println("new conn")
 		hj, ok := w.(http.Hijacker)
 		if !ok {
 			http.Error(w, "webserver doesn't support hijacking", http.StatusInternalServerError)
@@ -146,49 +147,54 @@ func ServeWeb(addr string) {
 			return
 		}
 		defer conn.Close()
+
+		defer func() {
+			if e := recover(); e != nil {
+				log.Println("panic", e)
+			}
+		}()
+		bwrite := func(wr io.Writer, a interface{}) {
+			if err := binary.Write(wr, binary.LittleEndian, a); err != nil {
+				panic(err.Error())
+			}
+		}
 		cimg, _ := airinput.TakeSnapshot()
 		var first bool = true
 		for {
-			time.Sleep(time.Millisecond * 1000)
-			//_, er := bufrw.WriteString("Now we're speaking raw TCP. Say hi: \n")
-			fmt.Println(first)
+			var bytes []byte
 			if !first {
 				img, _ := airinput.TakeSnapshot()
 				patch, _ := pngdiff.Diff(cimg, img)
-				bytes, _ := snappy.Encode(nil, patch.Pix)
+				bytes, _ = snappy.Encode(nil, patch.Pix)
 				cimg = img
-				fmt.Println("IN-LEN", len(bytes))
-				binary.Write(bufrw, binary.LittleEndian, uint32(len(bytes)))
-				_, er := bufrw.Write(bytes)
-				if er != nil {
-					break
-				}
-				bufrw.Flush()
-				continue
+				log.Println("IN-LEN", len(bytes))
+			} else {
+				first = false
+				// Write width and height
+				bwrite(bufrw, uint32(cimg.Rect.Max.X))
+				bwrite(bufrw, uint32(cimg.Rect.Max.Y))
+				bytes, _ = snappy.Encode(nil, cimg.Pix)
+				log.Println("LEN", len(bytes))
 			}
-			first = false
-
-			bytes, _ := snappy.Encode(nil, cimg.Pix)
-			fmt.Println("LEN", len(bytes))
-			binary.Write(bufrw, binary.LittleEndian, uint32(len(bytes)))
-			_, er := bufrw.Write(bytes)
-			if er != nil {
+			err := binary.Write(bufrw, binary.LittleEndian, uint32(len(bytes)))
+			if err != nil {
+				break
+			}
+			if _, err := bufrw.Write(bytes); err != nil {
 				break
 			}
 			bufrw.Flush()
+			time.Sleep(time.Millisecond * 100)
 		}
-		fmt.Println("END")
+		log.Println("END")
 	})
+	// Request need md5sum in query
+	// eg: http GET /patch.snappy?md5sum=xklj21901294123912
+	// Will be a patch file when header['X-Patch'] == true
 	http.HandleFunc("/patch.snappy", func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
 		img, _ := airinput.TakeSnapshot()
-		fmt.Println("snapshot", time.Now().Sub(start))
 		md5old := r.FormValue("md5sum")
-		fmt.Println(md5old)
-		//fmt.Println(cache.Get(md5old))
-		start = time.Now()
 		md5new := fmt.Sprintf("%x", md5.Sum(img.Pix))
-		fmt.Println("md5", time.Now().Sub(start))
 		cache.Put(md5new, img)
 		if md5new == md5old {
 			w.WriteHeader(http.StatusNotModified)
@@ -201,28 +207,25 @@ func ServeWeb(addr string) {
 
 		if imold, exists := cache.Get(md5old); exists {
 			w.Header().Set("X-Patch", "true")
-			start = time.Now()
 			patch, _ := pngdiff.Diff(imold, img)
-			fmt.Println("diff", time.Now().Sub(start))
-			start = time.Now()
 			bytes, err := snappy.Encode(nil, patch.Pix)
 			if err != nil {
 				log.Println(err)
 			}
 			w.Write(bytes)
 			//png.Encode(w, patch)
-			fmt.Println("patch encode", time.Now().Sub(start))
 		} else {
 			w.Header().Set("X-Patch", "false")
-			start = time.Now()
 			bytes, err := snappy.Encode(nil, img.Pix)
 			if err != nil {
 				log.Println(err)
 			}
 			w.Write(bytes)
 			//png.Encode(w, img)
-			fmt.Println("raw encode", time.Now().Sub(start))
 		}
 	})
+}
+
+func ServeWeb(addr string) {
 	http.ListenAndServe(addr, nil)
 }
