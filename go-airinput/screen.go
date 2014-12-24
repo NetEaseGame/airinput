@@ -23,32 +23,42 @@ func TakeSnapshot2() *image.RGBA {
 	var pict C.struct_picture
 	C.TakeScreenshot(C.CString(DEV_FB0), &pict)
 	w, h := int(pict.xres), int(pict.yres)
-	img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
 	size := w * h * 4 // Assume bytes per pixel is 4 bytes
-
-	img.Pix = []byte(C.GoStringN(pict.buffer, C.int(size)))
+	pixes := []byte(C.GoStringN(pict.buffer, C.int(size)))
+	img := &image.RGBA{pixes, 4 * w, image.Rect(0, 0, w, h)}
+	//img := image.NewRGBA(image.Rectangle{image.Point{0, 0}, image.Point{w, h}})
 	return img
 }
 
+var SCRBUFLEN int
+
 // TakeSnapshot by cmd: /system/bin/screencap
 func TakeSnapshot() (img *image.RGBA, err error) {
-	bf := bytes.NewBuffer(nil)
-	cmd := exec.Command("/system/bin/screencap")
-	cmd.Stdout = bf
+	var scrbf *bytes.Buffer
+	if SCRBUFLEN == 0 {
+		scrbf = bytes.NewBuffer(nil)
+	} else {
+		scrbf = bytes.NewBuffer(make([]byte, 0, SCRBUFLEN))
+	}
+	cmd := exec.Command("screencap")
+	cmd.Stdout = scrbf
 	if err = cmd.Run(); err != nil {
 		return
 	}
 	var width, height, format int32
-	binary.Read(bf, binary.LittleEndian, &width)
-	binary.Read(bf, binary.LittleEndian, &height)
-	err = binary.Read(bf, binary.LittleEndian, &format)
+	binary.Read(scrbf, binary.LittleEndian, &width)
+	binary.Read(scrbf, binary.LittleEndian, &height)
+	SCRBUFLEN = int(width * height * 4)
+	err = binary.Read(scrbf, binary.LittleEndian, &format)
 	if err != nil {
 		return
 	}
 	//fmt.Println(width, height, format)
-	img = image.NewRGBA(image.Rectangle{image.ZP, image.Point{int(width), int(height)}})
-	_, err = bf.Read(img.Pix)
+	w, h := int(width), int(height)
+	img = &image.RGBA{scrbf.Bytes(), 4 * w, image.Rect(0, 0, w, h)}
 	return
+	//img = image.NewRGBA(image.Rectangle{image.ZP, image.Point{int(width), int(height)}})
+	//_, err = bf.Read(img.Pix)
 }
 
 // Refrerence code of python-adbviewclient

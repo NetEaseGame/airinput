@@ -28,6 +28,17 @@ Also support use adb to run js
 
 	adb shell /data/local/tmp/air-native -i /dev/input/event1 -runjs='tap(400, 400, 2000)'
 
+### Snapshot performance
+* PNG has best quality and file is small, but compress use lot of time.
+* BMP file is big, but donnot use compress time.
+* JPG quality no good than PNG, but fast also very small.
+
+Use `screencap -p` is very very slow, about 4~5s. but `screencap` is fast, only take about 500ms.
+
+I develop the pngdiff lib <https://github.com/codeskyblue/pngdiff>. Diff is fast, only about 70ms. But encoding still take a lot of time(about 400ms). `^_|`
+
+So the total time is about 1s.
+
 ### About
 Still in develop, but the code is healthy. 
 

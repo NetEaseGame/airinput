@@ -5,6 +5,7 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
+	"image"
 	"image/jpeg"
 	"image/png"
 	"io"
@@ -120,16 +121,28 @@ func init() {
 		io.WriteString(w, "Server exit after 0.5s")
 	})
 
-	cache := NewRGBACache(2) // cache size = 2
 	http.HandleFunc("/screen.png", func(w http.ResponseWriter, r *http.Request) {
 		img, _ := airinput.TakeSnapshot()
 		w.Header().Set("Content-Type", "image/png")
 		png.Encode(w, img)
 	})
+	var JPEG_QUALITY = &jpeg.Options{60}
 	http.HandleFunc("/screen.jpg", func(w http.ResponseWriter, r *http.Request) {
 		img, _ := airinput.TakeSnapshot()
 		w.Header().Set("Content-Type", "image/png")
-		jpeg.Encode(w, img, &jpeg.Options{60})
+		jpeg.Encode(w, img, JPEG_QUALITY)
+	})
+	// patch part
+	var lastImage *image.RGBA
+	http.HandleFunc("/patch.jpg", func(w http.ResponseWriter, r *http.Request) {
+		img, _ := airinput.TakeSnapshot()
+		if lastImage == nil {
+			jpeg.Encode(w, img, JPEG_QUALITY)
+		} else {
+			patch, _ := pngdiff.Diff(lastImage, img)
+			jpeg.Encode(w, patch, JPEG_QUALITY)
+		}
+		lastImage = img
 	})
 
 	// Send full image first time
@@ -191,6 +204,7 @@ func init() {
 	// Request need md5sum in query
 	// eg: http GET /patch.snappy?md5sum=xklj21901294123912
 	// Will be a patch file when header['X-Patch'] == true
+	cache := NewRGBACache(2) // cache size = 2
 	http.HandleFunc("/patch.snappy", func(w http.ResponseWriter, r *http.Request) {
 		img, _ := airinput.TakeSnapshot()
 		md5old := r.FormValue("md5sum")
