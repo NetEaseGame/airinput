@@ -1,6 +1,7 @@
 package airinput
 
 import (
+	// #cgo amd64 LDFLAGS: -lrt
 	// #include "input.h"
 	"C"
 	"errors"
