@@ -5,16 +5,19 @@
  * Distributed under terms of the MIT license.
  */
 
+#include <assert.h>
+#include <errno.h>
+#include <fcntl.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
-#include <fcntl.h>
+#include <stddef.h>
 #include <sys/ioctl.h>
 #include <sys/time.h>
-#include <errno.h>
-#include <assert.h>
+#include <sys/sysinfo.h>
+#include <time.h>
 
 //Only can be found in Android source
 //#include <sys/system_properties.h>
