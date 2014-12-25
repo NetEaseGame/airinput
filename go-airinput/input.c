@@ -16,7 +16,8 @@
 #include <errno.h>
 #include <assert.h>
 
-#include <sys/system_properties.h>
+//Only can be found in Android source
+//#include <sys/system_properties.h>
 
 #include "input.h"
 #include "linux_input.h"
