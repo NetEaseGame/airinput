@@ -49,6 +49,11 @@ func init() {
 		airinput.Drag(int(x0), int(y0), int(x1), int(y1), int(steps), totime(msec))
 		return otto.UndefinedValue()
 	})
+	vm.Set("sleep", func(call otto.FunctionCall) otto.Value {
+		x0, _ := call.Argument(0).ToInteger()
+		time.Sleep(time.Millisecond * time.Duration(x0))
+		return otto.UndefinedValue()
+	})
 	vm.Set("pinch", func(call otto.FunctionCall) otto.Value {
 		ax0, _ := call.Argument(0).ToInteger()
 		ay0, _ := call.Argument(1).ToInteger()

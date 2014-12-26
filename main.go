@@ -3,7 +3,6 @@ package main
 
 import (
 	"flag"
-	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -41,11 +40,12 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		fmt.Printf("Use tpd event: %s\n", *tpevent)
+		log.Printf("Use tpd event: %s\n", *tpevent)
 	}
 
 	// initial
 	if err := airinput.Init(*tpevent); err != nil {
+		log.Println("initial")
 		log.Fatal(err)
 	}
 
@@ -57,14 +57,14 @@ func main() {
 	if *remote != "" {
 		r, err := http.Get("http://" + *remote + "/connect?serialno=" + url.QueryEscape(SerialNo()))
 		if err == nil {
-			fmt.Printf("Remote connected\n")
+			log.Printf("Remote connected\n")
 			r.Body.Close()
 		}
 	}
 
 	ipinfo, _ := MyIP()
-	fmt.Printf("IP: %v\n", ipinfo)
-	fmt.Printf("Listen on: %v\n", *addr)
+	log.Printf("IP: %v\n", ipinfo)
+	log.Printf("Listen on: %v\n", *addr)
 
 	if *isDaemon {
 		context := new(daemon.Context)
