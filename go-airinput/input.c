@@ -66,6 +66,8 @@ void execute_pinch(int fd, uint32_t device_flags, int touch1_x1,
                    int touch1_y1, int touch1_x2, int touch1_y2, int touch2_x1,
                    int touch2_y1, int touch2_x2, int touch2_y2, int num_steps,
                    int duration_msec);
+void execute_press(int fd, uint32_t device_flags, int x, int y);
+void execute_move(int fd, uint32_t device_flags, int x, int y);
 void execute_release(int fd, uint32_t device_flags);
 
 void set_debug(int on){
@@ -100,6 +102,13 @@ void pinch(int Ax0, int Ay0, int Ax1, int Ay1,
 // use it to fix unexpected error
 void release(){
     execute_release(fd, device_flags);
+}
+
+void press(int x, int y){
+	execute_press(fd, device_flags, x, y);
+}
+void move(int x, int y){
+	execute_move(fd, device_flags, x, y);
 }
 
 // like sendevent

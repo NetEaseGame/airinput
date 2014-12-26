@@ -148,6 +148,8 @@ func Tap(x, y int, duration time.Duration) {
 
 // Drag form A to B
 func Drag(startX, startY int, endX, endY int, steps int, duration time.Duration) {
+	startX, startY = real2raw(startX, startY)
+	endX, endY = real2raw(endX, endY)
 	msec := int(duration.Nanoseconds() / 1e6)
 	C.drag(C.int(startX), C.int(startY), C.int(endX), C.int(endY), C.int(steps), C.int(msec))
 }
@@ -156,9 +158,23 @@ func Drag(startX, startY int, endX, endY int, steps int, duration time.Duration)
 // Can implements like shrink and magnify
 func Pinch(Ax0, Ay0, Ax1, Ay1 int,
 	Bx0, By0, Bx1, By1 int, steps int, duration time.Duration) {
+	Ax0, Ay0 = real2raw(Ax0, Ay0)
+	Ax1, Ay1 = real2raw(Ax1, Ay1)
+	Bx0, By0 = real2raw(Bx0, By0)
+	Bx1, By1 = real2raw(Bx1, By1)
 	msec := int(duration.Nanoseconds() / 1e6)
 	C.pinch(C.int(Ax0), C.int(Ay0), C.int(Ax1), C.int(Ay1),
 		C.int(Bx0), C.int(By0), C.int(Bx1), C.int(By1), C.int(steps), C.int(msec))
+}
+
+func Press(x, y int) {
+	x, y = real2raw(x, y)
+	C.press(C.int(x), C.int(y))
+}
+
+func Move(x, y int) {
+	x, y = real2raw(x, y)
+	C.move(C.int(x), C.int(y))
 }
 
 func Release() {

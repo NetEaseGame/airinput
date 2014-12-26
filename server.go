@@ -124,12 +124,20 @@ func init() {
 	http.HandleFunc("/screen.png", func(w http.ResponseWriter, r *http.Request) {
 		img, _ := airinput.TakeSnapshot()
 		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin")) // for ajax
+		if ckname := r.URL.Query().Get("cookiename"); ckname != "" {
+			w.Header().Set("Set-Cookie", fmt.Sprintf("%s=%d", ckname, time.Now().UnixNano()/1000))
+		}
 		png.Encode(w, img)
 	})
 	var JPEG_QUALITY = &jpeg.Options{60}
 	http.HandleFunc("/screen.jpg", func(w http.ResponseWriter, r *http.Request) {
 		img, _ := airinput.TakeSnapshot()
-		w.Header().Set("Content-Type", "image/png")
+		w.Header().Set("Content-Type", "image/jpeg")
+		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin")) // for ajax
+		if ckname := r.URL.Query().Get("cookiename"); ckname != "" {
+			w.Header().Set("Set-Cookie", fmt.Sprintf("%s=%d", ckname, time.Now().UnixNano()/1000))
+		}
 		jpeg.Encode(w, img, JPEG_QUALITY)
 	})
 	// patch part

@@ -16,6 +16,22 @@ func init() {
 	totime := func(msec int64) time.Duration {
 		return time.Millisecond * time.Duration(msec)
 	}
+	vm.Set("press", func(call otto.FunctionCall) otto.Value {
+		x, _ := call.Argument(0).ToInteger()
+		y, _ := call.Argument(1).ToInteger()
+		airinput.Press(int(x), int(y))
+		return otto.UndefinedValue()
+	})
+	vm.Set("move", func(call otto.FunctionCall) otto.Value {
+		x, _ := call.Argument(0).ToInteger()
+		y, _ := call.Argument(1).ToInteger()
+		airinput.Move(int(x), int(y))
+		return otto.UndefinedValue()
+	})
+	vm.Set("release", func(call otto.FunctionCall) otto.Value {
+		airinput.Release()
+		return otto.UndefinedValue()
+	})
 	vm.Set("tap", func(call otto.FunctionCall) otto.Value {
 		x, _ := call.Argument(0).ToInteger()
 		y, _ := call.Argument(1).ToInteger()
