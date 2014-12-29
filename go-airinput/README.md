@@ -10,4 +10,4 @@ go-airinput
 
 Indicate rotation
 
-	![rotation](rotation.png)
+![rotation](rotation.png)
