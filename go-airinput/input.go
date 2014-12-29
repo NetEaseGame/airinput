@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"os/exec"
 	"regexp"
 	"strings"
 	"time"
@@ -44,26 +43,8 @@ func real2raw(x, y int) (rx, ry int) {
 	}
 	x = x * rawWidth / w
 	y = y * rawHeight / h
+	x, y = CoordRotate(x, y) // auto reverse rotate
 	return x, y
-}
-
-func GetRawSize(event string) (width, height int, err error) {
-	mxptn := regexp.MustCompile(`0035.*max (\d+)`)
-	myptn := regexp.MustCompile(`0036.*max (\d+)`)
-	out, err := exec.Command("getevent", "-p", event).Output()
-	if err != nil {
-		return
-	}
-	err = errors.New("touchpad event not recognized")
-	mxs := mxptn.FindStringSubmatch(string(out))
-	if len(mxs) == 0 {
-		return
-	}
-	mys := myptn.FindStringSubmatch(string(out))
-	if len(mys) == 0 {
-		return
-	}
-	return atoi(mxs[1]), atoi(mys[1]), nil
 }
 
 func GuessTouchpad() (p string, err error) {

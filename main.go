@@ -3,6 +3,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"net/url"
@@ -23,6 +24,7 @@ var (
 	tpevent  = flag.String("i", "", "touchpad event, eg: /dev/input/event1")
 	remote   = flag.String("remote", "", "remote control center, eg: 10.0.0.1:9000")
 	runjs    = flag.String("runjs", "", "javascript code to run")
+	test     = flag.Bool("test", false, "just test for develop")
 )
 
 func main() {
@@ -47,6 +49,11 @@ func main() {
 	if err := airinput.Init(*tpevent); err != nil {
 		log.Println("initial")
 		log.Fatal(err)
+	}
+
+	if *test {
+		fmt.Println(airinput.Rotation())
+		return
 	}
 
 	if *runjs != "" {

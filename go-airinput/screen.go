@@ -8,8 +8,10 @@ import (
 	"encoding/binary"
 	"errors"
 	"image"
+	"log"
 	"os/exec"
 	"regexp"
+	"strconv"
 	"sync"
 )
 
@@ -86,4 +88,72 @@ func ScreenSize2() (w, h int) {
 	w = int(C.width())
 	h = int(C.height())
 	return
+}
+
+const (
+	ROTATION_0 = iota
+	ROTATION_90
+	ROTATION_180
+	ROTATION_270
+	ROTATION_UNKNOWN
+)
+
+// return 0,1,2,3
+func Rotation() int {
+	re := regexp.MustCompile(`SurfaceOrientation:\s+(\d+)`)
+	dump, err := exec.Command("dumpsys", "input").Output()
+	if err != nil {
+		log.Println(err)
+		return ROTATION_UNKNOWN
+	}
+	res := re.FindStringSubmatch(string(dump))
+	if len(res) != 2 {
+		return ROTATION_UNKNOWN
+	}
+	rotation, _ := strconv.Atoi(res[1])
+	return rotation
+}
+
+// About: 0.03s
+// Rotate coordinate to rotation_0
+func CoordRotate(x, y int) (nx, ny int) {
+	w, h, er := ScreenSize()
+	if w > h {
+		w, h = h, w
+	}
+	if er != nil {
+		log.Println("screen size get failed:", er)
+		return x, y
+	}
+	switch Rotation() {
+	case ROTATION_90:
+		return w - y, x
+	case ROTATION_180:
+		return w - x, h - y
+	case ROTATION_270:
+		return y, h - x
+	case ROTATION_0:
+		fallthrough
+	default:
+		return x, y
+	}
+}
+
+func GetRawSize(event string) (width, height int, err error) {
+	mxptn := regexp.MustCompile(`0035.*max (\d+)`)
+	myptn := regexp.MustCompile(`0036.*max (\d+)`)
+	out, err := exec.Command("getevent", "-p", event).Output()
+	if err != nil {
+		return
+	}
+	err = errors.New("touchpad event not recognized")
+	mxs := mxptn.FindStringSubmatch(string(out))
+	if len(mxs) == 0 {
+		return
+	}
+	mys := myptn.FindStringSubmatch(string(out))
+	if len(mys) == 0 {
+		return
+	}
+	return atoi(mxs[1]), atoi(mys[1]), nil
 }

@@ -5,7 +5,7 @@
 
 function newRefreshFunc($screen, imageAddr, cookieKey) {
     var images = [];
-    var numOfImages = 3;
+    var numOfImages = 1;
     var counter = 0;
     var lasttime = 0;
 
@@ -18,9 +18,6 @@ function newRefreshFunc($screen, imageAddr, cookieKey) {
             var now = new Date();
             var t = document.getElementById('png').checked ? 'png' : 'jpg';
             var or = document.getElementById('orient').checked ? 'h' : 'v';
-            // var lowr = document.getElementById('lowres').checked ? 'l' : 'n';
-            // var f = document.getElementById('first').checked ? 'f' : 'n';
-            // var fli = document.getElementById('flip').checked ? 'f' : 'n';
             var w = waitfordiff ? 'w' : 'n';
             var asfile = 'n';
             var addr = imageAddr + '/screen.' + t +

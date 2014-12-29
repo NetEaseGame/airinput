@@ -11,7 +11,10 @@ bp = flask.Blueprint('home', __name__)
 def static_proxy(path):
     return flask.send_from_directory(utils.TMPDIR, path)
 
-#@models.db_session
 @bp.route('/')
 def home():
     return flask.render_template('index.html')
+
+@bp.route('/list')
+def list_phones():
+    return flask.render_template('list.html')

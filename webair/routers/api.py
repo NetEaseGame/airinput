@@ -34,59 +34,23 @@ def runjs(fn, *args):
     print >>eventfd, '%s(%s)' %(fn, argstr)
     eventfd.flush()
     lasttime = ctime
-    requests.post('http://10.242.116.68:21000/runjs', data='%s(%s)' %(fn, argstr))
+    requests.post('http://10.242.134.91:21000/runjs', data='%s(%s)' %(fn, argstr))
     # requests.post('http://10.242.119.210:21000/runjs', data='%s(%s)' %(fn, argstr))
 
 @bp.route('/touch', methods=['POST'])
 def touch():
-    global pressed
-    for pt in json.loads(request.form['event']):
-        if pt['pressed']:
-            if pressed:
-                runjs('move', pt['x'], pt['y'])
-                # r = requests.post('http://10.242.116.68:21000/runjs', data='move(%d, %d)' %(pt['x'], pt['y']))
-            else:
-                runjs('press', pt['x'], pt['y'])
-            pressed = True
-        else:
-            runjs('release')
-            pressed = False
+    pt = json.loads(request.form['data'])
+    print pt
+    runjs('tap', pt['x'], pt['y'], 100)
     return 'ok'
 
-# @bp.route('/crop')
-# def crop():
-#     rget = flask.request.args.get
+@bp.route('/drag', methods=['POST'])
+def drag():
+    twopt = json.loads(request.form['data'])
+    start, end = twopt['start'], twopt['end']
+    runjs('drag', start['x'], start['y'], end['x'], end['y'], 10, 500)
+    return 'ok'
 
-#     filename = rget('filename')
-#     screen = rget('screen')
-#     x, y = int(rget('x')), int(rget('y'))
-#     width, height = int(rget('width')), int(rget('height'))
-
-#     screen_file = screen.lstrip('/').replace('/', os.sep)
-#     # screen_path = os.path.join(utils.selfdir(), screen_file)
-#     # output_path = os.path.join(utils.workdir(), filename)
-#     assert os.path.exists(screen_path)
-
-#     im = cv2.imread(screen_path)
-#     cv2.imwrite(output_path, im[y:y+height, x:x+width])
-#     return flask.jsonify(dict(success=True, 
-#         message="文件已保存: "+output_path.encode('utf-8')))
-
-# @bp.route('/cropcheck')
-# def crop_check():
-#     rget = flask.request.args.get
-    
-#     screen = rget('screen')
-#     x, y = int(rget('x')), int(rget('y'))
-#     width, height = int(rget('width')), int(rget('height'))
-
-#     screen_file = screen.lstrip('/').replace('/', os.sep)
-#     screen_path = os.path.join(utils.selfdir(), screen_file)
-
-#     im = cv2.imread(screen_path)
-#     im = im[y:y+height, x:x+width]  # crop image
-#     siftcnt = aim.sift_point_count(im)
-#     return flask.jsonify(dict(siftcnt=siftcnt))
 
 @bp.route('/run')
 def run_code():
