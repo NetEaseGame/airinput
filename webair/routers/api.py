@@ -3,13 +3,11 @@
 
 import json
 import flask
-import airtest
-# import airtest.image as aim
-# import cv2
-import time
-from flask import request
 
+from flask import request
 import requests
+
+import proto
 
 app = None #airtest.connect(monitor=False)
 
@@ -19,36 +17,24 @@ bp = flask.Blueprint('api', __name__)
 def home():
     return 'API documentation'
 
-pressed = False
-
-lasttime = time.time()
-eventfd = open('event.txt', 'w')
-
-def runjs(fn, *args):
-    global lasttime, eventfd
-
+def runjs(ip, fn, *args):
     argstr = ', '.join(map(repr, args))
-    print fn, args
-    ctime = time.time()
-    print >>eventfd, '%d' %((ctime - lasttime)*1000)
-    print >>eventfd, '%s(%s)' %(fn, argstr)
-    eventfd.flush()
-    lasttime = ctime
-    requests.post('http://10.242.134.91:21000/runjs', data='%s(%s)' %(fn, argstr))
-    # requests.post('http://10.242.119.210:21000/runjs', data='%s(%s)' %(fn, argstr))
+    requests.post('http://{ip}:21000/runjs'.format(ip=ip), data='%s(%s)' %(fn, argstr))
 
-@bp.route('/touch', methods=['POST'])
-def touch():
+@bp.route('/<serialno>/touch', methods=['POST'])
+def touch(serialno):
+    ip = proto.PHONES[serialno]
     pt = json.loads(request.form['data'])
     print pt
-    runjs('tap', pt['x'], pt['y'], 100)
+    runjs(ip, 'tap', pt['x'], pt['y'], 100)
     return 'ok'
 
-@bp.route('/drag', methods=['POST'])
-def drag():
+@bp.route('/<serialno>/drag', methods=['POST'])
+def drag(serialno):
+    ip = proto.PHONES[serialno]
     twopt = json.loads(request.form['data'])
     start, end = twopt['start'], twopt['end']
-    runjs('drag', start['x'], start['y'], end['x'], end['y'], 10, 500)
+    runjs(ip, 'drag', start['x'], start['y'], end['x'], end['y'], 10, 500)
     return 'ok'
 
 
@@ -61,15 +47,3 @@ def run_code():
     except Exception, e:
         return flask.jsonify(dict(success=False, message=str(e)))
     return flask.jsonify(dict(success=True, message=""))
-
-@bp.route('/connect')
-def connect():
-    global app
-    device = flask.request.args.get('device')
-    devno = flask.request.args.get('devno')
-    try:
-        app = airtest.connect(devno, device=device, monitor=False)
-    except Exception, e:
-        return flask.jsonify(dict(success=False, message=str(e)))
-        
-    return flask.jsonify(dict(success=True, message="连接成功"))

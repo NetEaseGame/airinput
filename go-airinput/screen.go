@@ -9,19 +9,22 @@ import (
 	"errors"
 	"image"
 	"log"
+	"math"
 	"os/exec"
 	"regexp"
 	"strconv"
 	"sync"
+
+	"code.google.com/p/graphics-go/graphics"
 )
 
 var screenOnce = sync.Once{}
 
 const DEV_FB0 = "/dev/graphics/fb0"
 
-// TakeSnapshot of android phone (by read /dev/fb0)
+// Snapshot of android phone (by read /dev/fb0)
 // Only ok with few phones, a lot of phone will got blank image.
-func TakeSnapshot2() *image.RGBA {
+func Snapshot2() *image.RGBA {
 	var pict C.struct_picture
 	C.TakeScreenshot(C.CString(DEV_FB0), &pict)
 	w, h := int(pict.xres), int(pict.yres)
@@ -34,8 +37,9 @@ func TakeSnapshot2() *image.RGBA {
 
 var SCRBUFLEN int
 
-// TakeSnapshot by cmd: /system/bin/screencap
-func TakeSnapshot() (img *image.RGBA, err error) {
+// Snapshot by cmd: /system/bin/screencap
+// Not Rotated
+func Snapshot() (img *image.RGBA, err error) {
 	var scrbf *bytes.Buffer
 	if SCRBUFLEN == 0 {
 		scrbf = bytes.NewBuffer(nil)
@@ -61,6 +65,25 @@ func TakeSnapshot() (img *image.RGBA, err error) {
 	return
 	//img = image.NewRGBA(image.Rectangle{image.ZP, image.Point{int(width), int(height)}})
 	//_, err = bf.Read(img.Pix)
+}
+
+func SnapshotRotated() (dst *image.RGBA, err error) {
+	img, err := Snapshot()
+	if err != nil {
+		return
+	}
+	rotate := Rotation()
+	options := &graphics.RotateOptions{math.Pi * float64(4-rotate) / 2.0}
+	if rotate%2 != 0 {
+		dst = image.NewRGBA(image.Rect(0, 0, img.Bounds().Dy(), img.Bounds().Dx()))
+	} else {
+		dst = image.NewRGBA(img.Bounds())
+	}
+	err = graphics.Rotate(dst, img, options)
+	if err != nil {
+		return
+	}
+	return
 }
 
 // Refrerence code of python-adbviewclient

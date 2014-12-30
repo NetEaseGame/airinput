@@ -1,0 +1,9 @@
+.operation  > div{
+    display: block;
+    text-height: 14px;
+}
+
+.operation  > div > input{
+    margin: 5px;
+    vertical-align: middle; /*checkbox 和文字对齐*/
+}

@@ -122,7 +122,7 @@ func init() {
 	})
 
 	http.HandleFunc("/screen.png", func(w http.ResponseWriter, r *http.Request) {
-		img, _ := airinput.TakeSnapshot()
+		img, _ := airinput.Snapshot()
 		w.Header().Set("Content-Type", "image/png")
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin")) // for ajax
 		if ckname := r.URL.Query().Get("cookiename"); ckname != "" {
@@ -132,7 +132,7 @@ func init() {
 	})
 	var JPEG_QUALITY = &jpeg.Options{60}
 	http.HandleFunc("/screen.jpg", func(w http.ResponseWriter, r *http.Request) {
-		img, _ := airinput.TakeSnapshot()
+		img, _ := airinput.Snapshot()
 		w.Header().Set("Content-Type", "image/jpeg")
 		w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin")) // for ajax
 		if ckname := r.URL.Query().Get("cookiename"); ckname != "" {
@@ -143,7 +143,7 @@ func init() {
 	// patch part
 	var lastImage *image.RGBA
 	http.HandleFunc("/patch.jpg", func(w http.ResponseWriter, r *http.Request) {
-		img, _ := airinput.TakeSnapshot()
+		img, _ := airinput.Snapshot()
 		if lastImage == nil {
 			jpeg.Encode(w, img, JPEG_QUALITY)
 		} else {
@@ -179,12 +179,12 @@ func init() {
 				panic(err.Error())
 			}
 		}
-		cimg, _ := airinput.TakeSnapshot()
+		cimg, _ := airinput.Snapshot()
 		var first bool = true
 		for {
 			var bytes []byte
 			if !first {
-				img, _ := airinput.TakeSnapshot()
+				img, _ := airinput.Snapshot()
 				patch, _ := pngdiff.Diff(cimg, img)
 				bytes, _ = snappy.Encode(nil, patch.Pix)
 				cimg = img
@@ -214,7 +214,7 @@ func init() {
 	// Will be a patch file when header['X-Patch'] == true
 	cache := NewRGBACache(2) // cache size = 2
 	http.HandleFunc("/patch.snappy", func(w http.ResponseWriter, r *http.Request) {
-		img, _ := airinput.TakeSnapshot()
+		img, _ := airinput.Snapshot()
 		md5old := r.FormValue("md5sum")
 		md5new := fmt.Sprintf("%x", md5.Sum(img.Pix))
 		cache.Put(md5new, img)

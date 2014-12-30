@@ -16,12 +16,12 @@ function newRefreshFunc($screen, imageAddr, cookieKey) {
     var startnextimage = function(i, waitfordiff) {
         if (document.getElementById('auto').checked === true || waitfordiff === false) {
             var now = new Date();
-            var t = document.getElementById('png').checked ? 'png' : 'jpg';
-            var or = document.getElementById('orient').checked ? 'h' : 'v';
-            var w = waitfordiff ? 'w' : 'n';
+            // var t = document.getElementById('png').checked ? 'png' : 'jpg';
+            // var or = document.getElementById('orient').checked ? 'h' : 'v';
+            // var w = waitfordiff ? 'w' : 'n';
             var asfile = 'n';
-            var addr = imageAddr + '/screen.' + t +
-                '?cookiename=' + cookieKey + '&rand=' + or + w + now.getTime() + i;
+            var addr = imageAddr +
+                '?cookiename=' + cookieKey + '&rand=' + now.getTime() + i;
             $(images[i])
                 .unbind()
                 .load(function() {
