@@ -41,9 +41,9 @@ func real2raw(x, y int) (rx, ry int) {
 	if w > h {
 		w, h = h, w
 	}
+	x, y = CoordRotate(x, y) // auto reverse rotate
 	x = x * rawWidth / w
 	y = y * rawHeight / h
-	x, y = CoordRotate(x, y) // auto reverse rotate
 	return x, y
 }
 

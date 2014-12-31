@@ -139,6 +139,7 @@ func Rotation() int {
 
 // About: 0.03s
 // Rotate coordinate to rotation_0
+// Anticlockwise
 func CoordRotate(x, y int) (nx, ny int) {
 	w, h, er := ScreenSize()
 	if w > h {
