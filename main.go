@@ -3,10 +3,12 @@ package main
 
 import (
 	"flag"
-	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"net/url"
+	"os"
+	"strings"
 
 	"github.com/netease/airinput/go-airinput"
 	"github.com/sevlyar/go-daemon"
@@ -15,6 +17,8 @@ import (
 var (
 //	m = macaron.Classic()
 )
+
+const SAVEFILE = "/data/local/tmp/cache-airinput.txt"
 
 var (
 	addr     = flag.String("addr", ":21000", "listen address")
@@ -25,7 +29,14 @@ var (
 	remote   = flag.String("remote", "", "remote control center, eg: 10.0.0.1:9000")
 	runjs    = flag.String("runjs", "", "javascript code to run")
 	test     = flag.Bool("test", false, "just test for develop")
+	quite    = flag.Bool("q", false, "donot show debug info")
 )
+
+func lprintf(format string, v ...interface{}) {
+	if !*quite {
+		log.Printf(format, v...)
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -38,21 +49,31 @@ func main() {
 
 	if *tpevent == "" {
 		var err error
-		*tpevent, err = airinput.GuessTouchpad()
-		if err != nil {
-			log.Fatal(err)
+		var data []byte
+		if data, err = ioutil.ReadFile(SAVEFILE); err == nil {
+			if strings.HasPrefix(string(data), "/dev/input/") {
+				*tpevent = strings.TrimSpace(string(data))
+			}
+		} else {
+			if *tpevent, err = airinput.GuessTouchpad(); err != nil {
+				log.Fatal(err)
+			}
+			if fd, err := os.Create(SAVEFILE); err == nil {
+				defer fd.Close()
+				fd.Write([]byte(*tpevent))
+			}
 		}
-		log.Printf("Use tpd event: %s\n", *tpevent)
+		lprintf("Use tpd event: %s\n", *tpevent)
 	}
 
 	// initial
 	if err := airinput.Init(*tpevent); err != nil {
-		log.Println("initial")
+		lprintf("initial\n")
 		log.Fatal(err)
 	}
 
 	if *test {
-		fmt.Println(airinput.Rotation())
+		lprintf("rotation: %d", airinput.Rotation())
 		return
 	}
 
@@ -64,14 +85,14 @@ func main() {
 	if *remote != "" {
 		r, err := http.Get("http://" + *remote + "/connect?serialno=" + url.QueryEscape(SerialNo()))
 		if err == nil {
-			log.Printf("Remote connected\n")
+			lprintf("Remote connected\n")
 			r.Body.Close()
 		}
 	}
 
 	ipinfo, _ := MyIP()
-	log.Printf("IP: %v\n", ipinfo)
-	log.Printf("Listen on: %v\n", *addr)
+	lprintf("IP: %v\n", ipinfo)
+	lprintf("Listen on: %v\n", *addr)
 
 	if *isDaemon {
 		context := new(daemon.Context)
